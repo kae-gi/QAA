@@ -1,4 +1,4 @@
-# RNA-seq Quality Assessment Assignment - Bi 622 (Summer 2022)
+# RNA-seq Quality Assessment Assignment - Bi 623 (Summer 2022)
 
 Be sure to upload all relevant materials by the deadline and **double check** to be sure that your off-line repository is up-to-date with your on-line repository. Answers to the questions should be submitted in your final report as a `pdf`.
 
