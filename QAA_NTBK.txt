@@ -1,0 +1,216 @@
+Author: Kaetlyn Gibson
+Bi623 
+Summer 2022
+
+project files located: /projects/bgmp/kaetlyng/bioinfo/Bi623/PS/QAA
+
+=================================================
+||                    Part1                    ||
+=================================================
+Files assigned:
+-> /projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R1_001.fastq.gz
+-> /projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R2_001.fastq.gz
+-> /projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R1_001.fastq.gz
+-> /projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R2_001.fastq.gz
+
+Run interactive node:
+srun --account=bgmp --partition=bgmp --nodes=1 --ntasks-per-node=1 --time=2:00:00 --cpus-per-task=1 --pty bash
+
+Checking how many lines in file (divide by 4 to get number of records)
+zcat 21_3G_both_S15_L008_R1_001.fastq.gz | wc -l
+-> 36949196
+-> 9237299
+zcat 21_3G_both_S15_L008_R2_001.fastq.gz | wc -l
+-> 36949196
+-> 9237299 
+zcat 34_4H_both_S24_L008_R1_001.fastq.gz | wc -l
+-> 36162388
+-> 9040597
+zcat 34_4H_both_S24_L008_R2_001.fastq.gz | wc -l
+-> 36162388
+-> 9040597
+
+Checking number of char in the phred score line (numChar - 1 = read length, since have newline char at end): 
+zcat 21_3G_both_S15_L008_R1_001.fastq.gz | head -2 | tail -1 | wc -m
+-> 102
+-> 101
+zcat 21_3G_both_S15_L008_R2_001.fastq.gz | head -2 | tail -1 | wc -m
+-> 102
+-> 101
+zcat 34_4H_both_S24_L008_R1_001.fastq.gz | head -2 | tail -1 | wc -m
+-> 102
+-> 101
+zcat 34_4H_both_S24_L008_R2_001.fastq.gz | head -2 | tail -1 | wc -m
+-> 102
+-> 101
+
+Run sbatch for FastQC:
+-> sbatch runFastQC.sh
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 1:17.80
+Run sbatch to plot the files 
+-> sbatch runScoreDist.sh
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 5:20.97 (21_R1)
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 5:31.16 (21_R2)
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 5:23.32 (34_R1)
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 5:17.10 (34_R2)
+
+=================================================
+||                    Part2                    ||
+=================================================
+Create conda environment QAA with cutadapt and trimmomatic (in interactive session):
+-> conda create --name QAA cutadapt trimmomatic
+Activate/deactivate environment:
+-> conda activate QAA
+-> conda deactivate QAA
+Check versions:
+-> cutadapt --version
+->-> 4.1
+-> trimmomatic -version
+->-> 0.39
+
+WHILE IN INTERACTIVE NODE ON QAA ENVIRONMENT:
+
+Guide for how to use cutadapt:
+https://cutadapt.readthedocs.io/en/stable/guide.html
+
+Adapter sequences:
+-> R1: AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+-> R2: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+Checked to make sure that the R1 adapters were in R1 and not in R2, and that R2 adapters were in R2 and not in R1 using grep. (ex below):
+-> zcat 34_4H_both_S24_L008_R2_001.fastq.gz | grep "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT" | wc -l
+-> 137879
+confirmed that R1 adapter sequences are present in R1 files, and R2 adapter sequences are present in R2 files (but not present in wrong file) 
+
+Using cutadapt to remove adapter sequences (I later put this into a slurm script):
+-> sbatch runCutadapt.sh
+
+-> /usr/bin/time -v cutadapt \
+-a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
+-o 21_3G_both_S15_L008_R1_001.trim.fastq.gz \
+/projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R1_001.fastq.gz \
+> 21.R1.cutadapt.output.txt
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 2:06.37
+-> /usr/bin/time -v cutadapt \
+-a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
+-o 21_3G_both_S15_L008_R2_001.trim.fastq.gz \
+/projects/bgmp/shared/2017_sequencing/demultiplexed/21_3G_both_S15_L008_R2_001.fastq.gz \
+> 21.R2.cutadapt.output.txt
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 2:15.08
+-> /usr/bin/time -v cutadapt \
+-a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA \
+-o 34_4H_both_S24_L008_R1_001.trim.fastq.gz \
+/projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R1_001.fastq.gz \
+> 34.R1.cutadapt.output.txt
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 2:04.02
+-> /usr/bin/time -v cutadapt \
+-a AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
+-o 34_4H_both_S24_L008_R2_001.trim.fastq.gz \
+/projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R2_001.fastq.gz \
+> 34.R2.cutadapt.output.txt
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 2:12.39
+
+Trimmomatic documentation:
+https://datacarpentry.org/wrangling-genomics/03-trimming/index.html
+
+Using trimmomatic to quality trim pe(paired-end) (Also put in a slurm script later):
+-> sbatch runTrimmomatic.sh
+
+-> /usr/bin/time -v trimmomatic PE -phred33 \
+21_3G_both_S15_L008_R1_001.trim.fastq.gz \
+21_3G_both_S15_L008_R2_001.trim.fastq.gz \
+21_3G_both_S15_L008_R1_001.paired.qtrim.fastq.gz \
+21_3G_both_S15_L008_R1_001.unpaired.qtrim.fastq.gz \
+21_3G_both_S15_L008_R2_001.paired.qtrim.fastq.gz \
+21_3G_both_S15_L008_R2_001.unpaired.qtrim.fastq.gz \
+LEADING:3 TRAILING:3 SLIDINGWINDOW:5:15 MINLEN:35
+->-> Input Read Pairs: 9237299 
+Both Surviving: 8853312 (95.84%) 
+Forward Only Surviving: 335058 (3.63%) 
+Reverse Only Surviving: 6909 (0.07%) 
+Dropped: 42020 (0.45%)
+TrimmomaticPE: Completed successfully
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 3:28.35
+-> /usr/bin/time -v trimmomatic PE -phred33 \
+34_4H_both_S24_L008_R1_001.trim.fastq.gz \
+34_4H_both_S24_L008_R2_001.trim.fastq.gz \
+34_4H_both_S24_L008_R1_001.paired.qtrim.fastq.gz \
+34_4H_both_S24_L008_R1_001.unpaired.qtrim.fastq.gz \
+34_4H_both_S24_L008_R2_001.paired.qtrim.fastq.gz \
+34_4H_both_S24_L008_R2_001.unpaired.qtrim.fastq.gz \
+LEADING:3 TRAILING:3 SLIDINGWINDOW:5:15 MINLEN:35
+->-> Input Read Pairs: 9040597 
+Both Surviving: 8653141 (95.71%) 
+Forward Only Surviving: 358948 (3.97%) 
+Reverse Only Surviving: 6683 (0.07%) 
+Dropped: 21825 (0.24%)
+TrimmomaticPE: Completed successfully
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 3:23.84
+
+=================================================
+||                    Part3                    ||
+=================================================
+Downloaded files from ensembl & gunzipped:
+-> Mus_musculus.GRCm39.107.gtf
+-> Mus_musculus.GRCm39.dna.primary_assembly.fa
+
+Run sbatch for building star database with above files:
+-> sbatch buildStarDatabase.sh
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 14:59.38
+
+Run sbatch for running star:
+-> sbatch runStar.sh
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 1:11.34  (21)
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 1:05.17  (34)
+
+I updated my PS8 script per Leslie's suggestions (counts were fine, though).
+
+Running PS8 script:
+-> /usr/bin/time -v ./checkMapped.py -f ./aligned21/Mus_musculus.GRCm39.dna.ens107.STAR_2.7.10a.21.Aligned.out.sam
+->-> Mapped: 17061173
+->-> Unmapped: 645451
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 0:21.40
+-> /usr/bin/time -v ./checkMapped.py -f ./aligned34/Mus_musculus.GRCm39.dna.ens107.STAR_2.7.10a.34.Aligned.out.sam
+->-> Mapped: 16822704
+->-> Unmapped: 483578
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 0:21.26
+
+htseq-count documentation:
+https://htseq.readthedocs.io/en/release_0.11.1/count.html
+
+Using htseq-count (Also wrote a slurm script for this):
+-> sbatch runHtseqCount.sh
+
+-> /usr/bin/time -v htseq-count --format sam ./aligned21/Mus_musculus.GRCm39.dna.ens107.STAR_2.7.10a.21.Aligned.out.sam --stranded=yes ./mme/Mus_musculus.GRCm39.107.gtf > 21.Mus_musculus.htseq_count.stranded_yes.output.txt 
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 9:12.32
+-> /usr/bin/time -v htseq-count --format sam ./aligned21/Mus_musculus.GRCm39.dna.ens107.STAR_2.7.10a.21.Aligned.out.sam --stranded=reverse ./mme/Mus_musculus.GRCm39.107.gtf > 21.Mus_musculus.htseq_count.stranded_reverse.output.txt 
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 9:45.75
+-> /usr/bin/time -v htseq-count --format sam ./aligned34/Mus_musculus.GRCm39.dna.ens107.STAR_2.7.10a.34.Aligned.out.sam --stranded=yes ./mme/Mus_musculus.GRCm39.107.gtf > 34.Mus_musculus.htseq_count.stranded_yes.output.txt 
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 8:59.19
+-> /usr/bin/time -v htseq-count --format sam ./aligned34/Mus_musculus.GRCm39.dna.ens107.STAR_2.7.10a.34.Aligned.out.sam --stranded=reverse ./mme/Mus_musculus.GRCm39.107.gtf > 34.Mus_musculus.htseq_count.stranded_reverse.output.txt 
+->-> Elapsed (wall clock) time (h:mm:ss or m:ss): 9:23.71
+
+Determining the % of reads mapped to a gene for each file (separately):
+-> Sum the number of reads that mapped to a feature
+->-> cat 21.Mus_musculus.htseq_count.stranded_reverse.output.txt | head -n 56748 | awk '{sum+=$2} END {print sum}'
+->->-> 7181307
+->-> cat 21.Mus_musculus.htseq_count.stranded_yes.output.txt | head -n 56748 | awk '{sum+=$2} END {print sum}'
+->->-> 340380
+->-> cat 34.Mus_musculus.htseq_count.stranded_reverse.output.txt | head -n 56748 | awk '{sum+=$2} END {print sum}'
+->->-> 7214830
+->-> cat 34.Mus_musculus.htseq_count.stranded_yes.output.txt | head -n 56748 | awk '{sum+=$2} END {print sum}'
+->->-> 482525
+-> Calculate the total number of reads.
+->-> cat 21.Mus_musculus.htseq_count.stranded_reverse.output.txt | awk '{sum+=$2} END {print sum}'
+->->-> 8853312
+->-> cat 21.Mus_musculus.htseq_count.stranded_yes.output.txt | awk '{sum+=$2} END {print sum}'
+->->-> 8853312
+->-> cat 34.Mus_musculus.htseq_count.stranded_reverse.output.txt | awk '{sum+=$2} END {print sum}'
+->->-> 8653141
+->-> cat 34.Mus_musculus.htseq_count.stranded_yes.output.txt | awk '{sum+=$2} END {print sum}'
+->->-> 8653141
+-> Determine the percentage of reads mapped by dividing the number of mapping reads by the total number of reads.
+->-> (7181307/8853312)*100 = 81.11%
+->-> (340380/8853312)*100 = 3.84%
+->-> (7214830/8653141)*100 = 83.38%
+->-> (482525/8653141)*100 = 5.58%
