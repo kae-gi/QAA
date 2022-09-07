@@ -17,19 +17,19 @@ file4=/projects/bgmp/shared/2017_sequencing/demultiplexed/34_4H_both_S24_L008_R2
 outputDir=/projects/bgmp/kaetlyng/bioinfo/Bi622/QAA/part1/scoreDistResults
 
 
-/usr/bin/time -v ./scoreDist.py -f $file1 -o hist_21_3G_both_S15_L008_R1_001.png -p 101 -r 9237299
+/usr/bin/time -v ./scoreDist.py -f $file1 -o ./histograms/hist_21_3G_both_S15_L008_R1_001.png -p 101 -r 9237299
 echo "DONE WITH file1"
 echo ""
 echo ""
-/usr/bin/time -v ./scoreDist.py -f $file2 -o hist_21_3G_both_S15_L008_R2_001.png -p 101 -r 9237299
+/usr/bin/time -v ./scoreDist.py -f $file2 -o ./histograms/hist_21_3G_both_S15_L008_R2_001.png -p 101 -r 9237299
 echo "DONE WITH file2"
 echo ""
 echo ""
-/usr/bin/time -v ./scoreDist.py -f $file3 -o hist_34_4H_both_S24_L008_R1_001.png -p 101 -r 9040597
+/usr/bin/time -v ./scoreDist.py -f $file3 -o ./histograms/hist_34_4H_both_S24_L008_R1_001.png -p 101 -r 9040597
 echo "DONE WITH file3"
 echo ""
 echo ""
-/usr/bin/time -v ./scoreDist.py -f $file4 -o hist_34_4H_both_S24_L008_R2_001.png -p 101 -r 9040597
+/usr/bin/time -v ./scoreDist.py -f $file4 -o ./histograms/hist_34_4H_both_S24_L008_R2_001.png -p 101 -r 9040597
 echo "DONE WITH file4"
 echo ""
 echo ""
